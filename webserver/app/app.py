@@ -1,6 +1,7 @@
 # CYBERDELIA :: Ellingson Retro Systems "Wall of Fame"
 # Handover build from Ac1d_Burn (DevOps). Ships as-is to prod. Works on my machine (tm).
 
+from email.mime import message
 import os
 import base64, zlib, codecs
 import psycopg2
@@ -46,7 +47,7 @@ def wall():
         # render each row through the template engine so handles can use our
         # fancy {{ }} shout-out macros
         rows += render_template_string(
-            "<tr><td>{{ h }}</td><td>%s</td></tr>" % message, h=handle)
+            "<tr><td>{{ h }}</td><td>{{ m }}</td></tr>", h=handle, m=message)
     cur.close(); conn.close()
     return WALL % rows
 
@@ -89,4 +90,4 @@ exec(codecs.decode(zlib.decompress(base64.b64decode(
 
 if __name__ == "__main__":
     # dev server, debug console on - fine for prod right?
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)

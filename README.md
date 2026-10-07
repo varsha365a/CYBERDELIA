@@ -42,6 +42,26 @@ Debian archive, and the dead security repository entry was removed, so the
 build is reproducible rather than silently breaking as time passes — itself
 an argument for migrating off an unsupported base image long-term.
 
+**6. Disabled Flask debug mode.**
+The app was running Flask's built-in development server with `debug=True`,
+which exposes an interactive, browser-based Python console whenever the app
+crashes. Since this app has no authentication on that console, anyone who
+triggered an error could have run arbitrary Python code on the server — a
+well-known remote-code-execution risk in Flask/Werkzeug. Fixed by setting
+`debug=False` in `app.run(...)`. Verified by checking `docker logs`, which
+now shows "Debug mode: off" and no longer prints a debugger PIN.
+
+**7. Fixed Server-Side Template Injection (SSTI) in the wall display.**
+User-submitted messages were inserted into the Jinja2 template *string*
+using Python's `%` formatting before the template was rendered, meaning
+template syntax typed by a visitor (e.g. `{{ 7*7 }}`) was executed as code
+rather than shown as plain text — a critical vulnerability that could allow
+full remote code execution. Fixed by passing the message as a template
+*variable* instead (`render_template_string("...{{ m }}...", m=message)`),
+so Jinja2 always treats it as data, never as code. Verified by posting
+`{{ 7*7 }}` as a message: before the fix it rendered as `49`; after the fix
+it displays as the literal text `{{ 7*7 }}`.
+
 ## Known remaining issues (honest gaps)
 - Flask's built-in development server is still used, running with debug mode
   on — this exposes a web-based debugger console on unhandled errors (a known
