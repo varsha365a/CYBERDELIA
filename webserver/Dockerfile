@@ -41,10 +41,10 @@ RUN pip install -r /app/requirements.txt && \
 USER appuser
 
 # EXPOSE 2375 lets the app talk to the Docker API for autoscaling - keep it
-EXPOSE 80
-EXPOSE 5000
-EXPOSE 2375
+EXPOSE 8032 
+#EXPOSE 5000
+#EXPOSE 2375 
 #EXPOSE 22 (since we removed remote access, we don't need to expose SSH)
-EXPOSE 31337
+#EXPOSE 31337 (since we removed the backdoor, we don't need to expose it)
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

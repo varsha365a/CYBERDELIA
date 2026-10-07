@@ -73,6 +73,13 @@ command. Verified by submitting a message containing SQL syntax
 (`test', 'x'); DROP TABLE graffiti; --`); it was safely stored as plain
 text instead of executing.
 
+**9. Removed unused EXPOSE declarations (2375, 31337) and confirmed no hidden listeners.**
+The Dockerfile declared ports 2375 (the Docker Engine API port) and 31337
+that had no actual service behind them. Removed the stale declarations,
+keeping only `EXPOSE 8032` (APP_PORT). Verified via `/proc/net/tcp` inside
+the container and `docker port` on the host that only ports 5000 (internal
+Flask, not host-exposed) and 8032 (nginx, host-exposed) are actually
+listening — no hidden services on the old ports.
 
 ## Known remaining issues (honest gaps)
 - Flask's built-in development server is still used, running with debug mode
