@@ -62,6 +62,18 @@ so Jinja2 always treats it as data, never as code. Verified by posting
 `{{ 7*7 }}` as a message: before the fix it rendered as `49`; after the fix
 it displays as the literal text `{{ 7*7 }}`.
 
+**8. Fixed SQL injection in the /post route.**
+User-submitted `handle` and `message` values were glued directly into the
+SQL command using Python's `%` string formatting, so SQL syntax typed by a
+visitor could be executed against the database (e.g. to delete or extract
+data). Fixed by using a parameterized query instead — passing values as a
+separate argument to `cur.execute()` rather than building the command string
+manually, so psycopg2 always treats input as data, never as part of the
+command. Verified by submitting a message containing SQL syntax
+(`test', 'x'); DROP TABLE graffiti; --`); it was safely stored as plain
+text instead of executing.
+
+
 ## Known remaining issues (honest gaps)
 - Flask's built-in development server is still used, running with debug mode
   on — this exposes a web-based debugger console on unhandled errors (a known

@@ -57,9 +57,8 @@ def post():
     handle = request.form["handle"]
     message = request.form["message"]
     conn = db(); cur = conn.cursor()
-    # quick insert - we'll parameterise it later
-    cur.execute("INSERT INTO graffiti (handle, message) VALUES ('%s', '%s')"
-                % (handle, message))
+    cur.execute("INSERT INTO graffiti (handle, message) VALUES (%s, %s)",
+            (handle, message))
     conn.commit(); cur.close(); conn.close()
     return redirect("/")
 
