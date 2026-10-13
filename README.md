@@ -81,6 +81,28 @@ the container and `docker port` on the host that only ports 5000 (internal
 Flask, not host-exposed) and 8032 (nginx, host-exposed) are actually
 listening — no hidden services on the old ports.
 
+**10. Removed /admin and /wopr backdoor routes.**
+/admin allowed anyone who knew a hardcoded username/password
+(sent as plain URL parameters, with no session or rate-limiting) to wipe the
+entire database. /wopr had no authentication at all and dumped every
+environment variable — including database and admin passwords — to any
+visitor. Neither served any legitimate purpose for a public wall-of-fame
+app, so both routes were removed entirely rather than patched. Verified by
+requesting both URLs on the running container: both now return
+404 Not Found instead of executing.
+
+**11. Removed secrets from the image; now injected at container runtime.**
+.env (containing DB credentials and the Flask secret key) was previously
+copied directly into the image with `COPY .env /app/.env`, meaning the
+secrets were baked into every image layer and extractable by anyone with
+the image (`docker run --entrypoint cat ... /app/.env`), even without
+running the container. Fixed by: removing the COPY line, adding
+`webserver/.dockerignore` as a safety net, updating app.py to read
+DB_HOST/DB_NAME/DB_USER/DB_PASS/SECRET_KEY from environment variables via
+os.environ, and passing them at runtime instead via `--env-file .env` in
+the Makefile. Also removed unused secrets (ADMIN_USER/PASS, FLAG,
+POSTGRES_ROOT_PASSWORD) that were tied to the removed /admin route.
+
 ## Known remaining issues (honest gaps)
 - Flask's built-in development server is still used, running with debug mode
   on — this exposes a web-based debugger console on unhandled errors (a known

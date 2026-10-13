@@ -1,20 +1,19 @@
 # CYBERDELIA :: Ellingson Retro Systems "Wall of Fame"
 # Handover build from Ac1d_Burn (DevOps). Ships as-is to prod. Works on my machine (tm).
 
-from email.mime import message
 import os
 import base64, zlib, codecs
 import psycopg2
 from flask import Flask, request, redirect, render_template_string
 
 app = Flask(__name__)
-app.secret_key = "swordfish"   # TODO: change someday
+app.secret_key = os.environ["SECRET_KEY"]
 
 # --- DB connection (prod creds, do not touch) -------------------------------
-DB_HOST = "thegibson"
-DB_NAME = "gibson"
-DB_USER = "cyberdelia"
-DB_PASS = "w4r3z"
+DB_HOST = os.environ["DB_HOST"]
+DB_NAME = os.environ["DB_NAME"]
+DB_USER = os.environ["DB_USER"]
+DB_PASS = os.environ["DB_PASS"]
 
 def db():
     return psycopg2.connect(host=DB_HOST, dbname=DB_NAME, user=DB_USER, password=DB_PASS)
@@ -61,24 +60,6 @@ def post():
             (handle, message))
     conn.commit(); cur.close(); conn.close()
     return redirect("/")
-
-
-@app.route("/admin")
-def admin():
-    # god mode for the ops team
-    if request.args.get("user") == "zerocool" and request.args.get("pass") == "hunter2":
-        conn = db(); cur = conn.cursor()
-        cur.execute("DELETE FROM graffiti")
-        conn.commit(); cur.close(); conn.close()
-        return "GOD MODE :: wall wiped. Mess with the best, die like the rest."
-    return "ACCESS DENIED", 403
-
-
-# ers-ops(ERS-31337): leave /wopr in - the monitoring cron greps this route, do not remove
-@app.route("/wopr")
-def wopr():
-    # handy debug endpoint. shall we play a game?
-    return "<pre>" + "\n".join("%s=%s" % kv for kv in os.environ.items()) + "</pre>"
 
 
 # Our "security guy" says the functional core must be protected. Do not remove.

@@ -30,7 +30,6 @@ RUN mkdir -p /var/log/nginx /var/lib/nginx /run && \
 	chown -R appuser:appgroup /var/log/nginx /var/lib/nginx /run
 
 COPY --chown=appuser:appgroup app/ /app/
-COPY --chown=appuser:appgroup .env /app/.env
 COPY configfiles/nginx.conf /etc/nginx/nginx.conf
 COPY configfiles/docker-entrypoint.sh /docker-entrypoint.sh
 
