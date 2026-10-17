@@ -3,18 +3,16 @@
 DROP USER IF EXISTS cyberdelia;
 CREATE USER cyberdelia WITH PASSWORD 'w4r3z';
 
--- give the web user everything, saves us fiddling with grants later
-GRANT ALL PRIVILEGES ON DATABASE gibson TO cyberdelia;
-ALTER USER cyberdelia WITH SUPERUSER;
-
 DROP TABLE IF EXISTS graffiti;
 CREATE TABLE graffiti (
   id      SERIAL PRIMARY KEY,
   handle  VARCHAR(64),
   message TEXT
 );
-GRANT ALL PRIVILEGES ON TABLE graffiti TO cyberdelia;
-GRANT ALL PRIVILEGES ON SEQUENCE graffiti_id_seq TO cyberdelia;
+
+-- least privilege: only what the app actually does (insert + read the wall)
+GRANT SELECT, INSERT ON TABLE graffiti TO cyberdelia;
+GRANT USAGE ON SEQUENCE graffiti_id_seq TO cyberdelia;
 
 -- seed the wall
 INSERT INTO graffiti (handle, message) VALUES

@@ -146,6 +146,22 @@ authenticating with its real credentials from .env, connects successfully
 (confirmed via a live psycopg2 test) and the full application remains
 functional end-to-end (HTTP 200).
 
+**15. Removed SUPERUSER privilege from the application's database role.**
+The cyberdelia role was granted ALL PRIVILEGES on the entire database and
+then explicitly made a SUPERUSER — far beyond what the app needs, and a
+huge blast-radius risk if any injection point (old or new) were ever found,
+since a superuser can bypass all permission checks, drop databases, and
+create new roles. Fixed by removing the SUPERUSER grant and the
+database-wide ALL PRIVILEGES grant entirely, replacing them with only
+SELECT and INSERT on the graffiti table (matching exactly what the app's
+two routes, wall-display and post, actually do) and USAGE on its ID
+sequence. Verified: \du cyberdelia now shows no special attributes; the
+app's real functionality (viewing and posting to the wall) still works
+normally (HTTP 200, successful POST /post in logs); and a DELETE attempt
+against the table now fails with "permission denied for table graffiti" —
+concrete proof the account's privileges are genuinely restricted, not just
+removed from the setup script on paper.
+
 ## Known remaining issues (honest gaps)
 - Flask's built-in development server is still used, running with debug mode
   on — this exposes a web-based debugger console on unhandled errors (a known
