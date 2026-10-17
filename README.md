@@ -103,6 +103,49 @@ os.environ, and passing them at runtime instead via `--env-file .env` in
 the Makefile. Also removed unused secrets (ADMIN_USER/PASS, FLAG,
 POSTGRES_ROOT_PASSWORD) that were tied to the removed /admin route.
 
+**12. Remediated specific CVEs via dependency upgrades, verified with Trivy.**
+Ran Trivy v0.75.0 against the hardened webserver image. Initial scan found
+specific vulnerabilities including CVE-2019-14806 (Werkzeug 0.14.1 — weak,
+predictable debugger PIN, reinforcing the earlier debug-mode fix),
+CVE-2019-10906 (Jinja2 2.10 — sandbox escape via str.format_map, reinforcing
+the earlier SSTI fix), and CVE-2018-18074 (requests 2.19.1 — leaks
+Authorization header on HTTPS-to-HTTP redirect). Remediated by upgrading
+Werkzeug to 0.16.1, Jinja2 to 2.11.3, and requests to 2.20.0 in
+requirements.txt. Verified by re-scanning the rebuilt image: all three CVE
+IDs no longer appear, and the Python package vulnerability total dropped
+from 49 to 42. Note: the Debian OS-level scan still reports a very large
+number of findings (CRITICAL: 330, HIGH: 3685, ...), since Trivy itself
+confirms "this OS version is no longer supported... security updates are
+not provided" — the single largest, most concrete argument in this report
+for migrating off the python:3.6 / Debian 11 base image entirely.
+
+**13. Removed --privileged=true from the database container.**
+The Makefile ran the dbserver container with --privileged=true, which
+grants a container near-unrestricted access to the host's devices and
+kernel capabilities — a container escape here could compromise the host
+machine itself, not just the database. A Postgres database never needs
+this flag to function. Removed it from the docker run command. Verified
+with `docker inspect ... --format '{{.HostConfig.Privileged}}'`, which now
+reports `false` (previously `true`).
+
+**14. Fixed database authentication: replaced "trust" with password-required access.**
+pg_hba.conf allowed any host on any address to connect to the database with
+NO password at all ("trust" method) — POSTGRES_PASSWORD was effectively
+decorative. Additionally discovered that the original pg_hba.conf/
+postgresql.conf files were copied to /postgres/ in the image but Postgres
+never actually reads config from that path — they had zero effect the
+whole time. Fixed by: rewriting pg_hba.conf to require password
+authentication (md5, matching Postgres 11's default hash format) for any
+connection from the app's Docker subnet (203.0.113.0/24), keeping local
+socket connections trusted (safe, since that only applies to processes
+already inside the same container), and passing `-c hba_file=/postgres/
+pg_hba.conf` in the Makefile's `docker run` command so the file is
+genuinely loaded. Verified: an unauthenticated connection now gets
+"no pg_hba.conf entry" / password errors, while the webserver app,
+authenticating with its real credentials from .env, connects successfully
+(confirmed via a live psycopg2 test) and the full application remains
+functional end-to-end (HTTP 200).
+
 ## Known remaining issues (honest gaps)
 - Flask's built-in development server is still used, running with debug mode
   on — this exposes a web-based debugger console on unhandled errors (a known
