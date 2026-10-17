@@ -162,6 +162,26 @@ against the table now fails with "permission denied for table graffiti" —
 concrete proof the account's privileges are genuinely restricted, not just
 removed from the setup script on paper.
 
+**16. Migrated from manual Makefile/shell-script build to Docker Compose.**
+The original build process relied on two separate Makefiles invoking raw
+docker build/run/network commands by hand, including a manual sleep +
+docker exec < file.sql step to seed the database — fragile, error-prone
+(a frequent source of race-condition failures during this project), and
+not easily reproducible by someone unfamiliar with the specific commands.
+Replaced with a single docker-compose.yml defining both services
+declaratively: explicit build contexts/build-args, a fixed custom network
+with the same addressing scheme as before, environment variables sourced
+from .env, and — notably — the official Postgres image's own
+docker-entrypoint-initdb.d mechanism to auto-run the seed SQL on first
+start, removing the need for a manual sleep/race condition entirely.
+depends_on also documents the startup relationship between the two
+services declaratively instead of relying on the developer remembering
+the correct order. Verified: `docker compose up -d --build` builds and
+starts both containers in one command; the app is reachable (HTTP 200);
+the database is auto-seeded (SELECT confirms all 5 rows present); and the
+container still runs as the non-root appuser — confirming every prior
+hardening change carries over correctly to the new declarative build.
+
 ## Known remaining issues (honest gaps)
 - Flask's built-in development server is still used, running with debug mode
   on — this exposes a web-based debugger console on unhandled errors (a known

@@ -1,0 +1,39 @@
+services:
+  dbserver:
+    build: ./dbserver
+    container_name: 17058032_cyberdelia_db_c
+    hostname: thegibson
+    environment:
+      POSTGRES_PASSWORD: "H4ckTh3Pl4n3t"
+      POSTGRES_DB: "gibson"
+    networks:
+      cyberdelia_net:
+        ipv4_address: 203.0.113.201
+    volumes:
+      - ./dbserver/sqlconfig/cyberdelia.sql:/docker-entrypoint-initdb.d/cyberdelia.sql:ro
+    command: ["-c", "hba_file=/postgres/pg_hba.conf"]
+
+  webserver:
+    build:
+      context: ./webserver
+      args:
+        APP_UID: "20032"
+    container_name: 17058032_cyberdelia_web_c
+    hostname: cyberdelia
+    env_file:
+      - ./webserver/.env
+    depends_on:
+      - dbserver
+    networks:
+      cyberdelia_net:
+        ipv4_address: 203.0.113.200
+    ports:
+      - "80:8032"
+    extra_hosts:
+      - "thegibson:203.0.113.201"
+
+networks:
+  cyberdelia_net:
+    ipam:
+      config:
+        - subnet: 203.0.113.0/24
