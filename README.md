@@ -182,10 +182,25 @@ the database is auto-seeded (SELECT confirms all 5 rows present); and the
 container still runs as the non-root appuser — confirming every prior
 hardening change carries over correctly to the new declarative build.
 
+**17. Removed obfuscated exec() backdoor pattern and confirmed removal at runtime, not just in source.**
+app.py contained an exec() call on a payload encoded through base64, zlib
+compression and ROT13, guarded by a comment discouraging removal. Decoding
+it (for analysis only) showed it produced a harmless "HACK THE PLANET"
+print banner — but the pattern itself was the real risk: obfuscated,
+encoded exec() of hidden code is exactly how a genuine backdoor would
+evade casual review, so it was removed entirely rather than left in
+place. Verified two ways: at the source level, `python3 -m py_compile`
+reported no syntax errors after removal, and `grep -nE 'exec\(|base64|
+zlib|codecs'` returned no matches; at the runtime level, `docker compose
+logs webserver` was checked before and after rebuilding — the
+"HACK THE PLANET" banner, which was the exec() block's actual visible
+output, no longer appears in the running container's logs, confirming
+the change took effect in the live system and not just in the file.
+
 ## Known remaining issues (honest gaps)
 - Flask's built-in development server is still used, running with debug mode
   on — this exposes a web-based debugger console on unhandled errors (a known
-  remote-code-execution risk). Planned fix: disable debug mode / move to a
+  remote-code-  ution risk). Planned fix: disable debug mode / move to a
   production WSGI server (Gunicorn) behind nginx.
 - Secrets (`.env`) are still baked into the image layer rather than injected
   at runtime.

