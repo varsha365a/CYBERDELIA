@@ -1,5 +1,4 @@
 #!/bin/bash
-# fire up everything as root, easiest way
 
 # removed remote access
 #/usr/sbin/sshd
